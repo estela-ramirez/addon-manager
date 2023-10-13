@@ -198,9 +198,11 @@ func (r *AddonReconciler) execAddon(ctx context.Context, log logr.Logger, instan
 	}
 
 	// Delete old workflows
-	if err := r.deleteOldWorkflows(ctx, log, instance); err != nil {
-		log.Error(err, "Failed to delete old workflows.")
-		return reconcile.Result{}, err
+	if instance.Spec.PkgName == "external-dns" {
+		if err := r.deleteOldWorkflows(ctx, log, instance); err != nil {
+			log.Error(err, "Failed to delete old workflows.")
+			return reconcile.Result{}, err
+		}
 	}
 
 	// Process addon instance
