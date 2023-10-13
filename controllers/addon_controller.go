@@ -129,6 +129,43 @@ func (r *AddonReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return r.execAddon(ctx, log, instance)
 }
 
+func (r *AddonReconciler) deleteOldWorkflows(ctx context.Context, log logr.Logger, addon *addonmgrv1alpha1.Addon) error {
+	// Define the selector to get the workflows related to the addon
+	labelSelector := metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			"addon": addon.Name,
+		},
+	}
+
+	selectorString, err := metav1.LabelSelectorAsSelector(&labelSelector)
+	if err != nil {
+		return err
+	}
+	log.Info("Deleting old workflows with selector", selectorString)
+
+	// List the workflows
+	workflows, err := r.wfcli.ArgoprojV1alpha1().Workflows(addon.Namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: selectorString.String(),
+	})
+	if err != nil {
+		return err
+	}
+	for _, workflow := range workflows.Items {
+		log.Info("Found old workflow: ", workflow.Name)
+	}
+
+	// Delete each workflow
+	for _, workflow := range workflows.Items {
+		err := r.wfcli.ArgoprojV1alpha1().Workflows(addon.Namespace).Delete(ctx, workflow.Name, metav1.DeleteOptions{})
+		log.Info("Deleted old workflow: ", workflow.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (r *AddonReconciler) execAddon(ctx context.Context, log logr.Logger, instance *addonmgrv1alpha1.Addon) (reconcile.Result, error) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -158,6 +195,12 @@ func (r *AddonReconciler) execAddon(ctx context.Context, log logr.Logger, instan
 		}
 
 		return reconcile.Result{}, nil
+	}
+
+	// Delete old workflows
+	if err := r.deleteOldWorkflows(ctx, log, instance); err != nil {
+		log.Error(err, "Failed to delete old workflows.")
+		return reconcile.Result{}, err
 	}
 
 	// Process addon instance

@@ -211,6 +211,7 @@ func (w *workflowLifecycle) configureGlobalWFParameters(addon *addonmgrv1alpha1.
 
 func (w *workflowLifecycle) Delete(ctx context.Context, name string) error {
 	err := w.dynClient.Resource(common.WorkflowGVR()).Namespace(w.addon.Namespace).Delete(ctx, name, metav1.DeleteOptions{})
+	w.log.Info("Deleting workflow", name)
 	if err != nil {
 		return err
 	}
