@@ -8,5 +8,5 @@ spec:
     spec:
       containers:
       # Change the value of image field below to your controller image URL
-      - image: keikoproj/addon-manager:latest
+      - image: docker.intuit.com/personal/eramirez8/keikoproj/addon-manager:17oct2023
         name: manager

@@ -197,14 +197,6 @@ func (r *AddonReconciler) execAddon(ctx context.Context, log logr.Logger, instan
 		return reconcile.Result{}, nil
 	}
 
-	// Delete old workflows
-	if instance.Spec.PkgName == "external-dns" {
-		if err := r.deleteOldWorkflows(ctx, log, instance); err != nil {
-			log.Error(err, "Failed to delete old workflows.")
-			return reconcile.Result{}, err
-		}
-	}
-
 	// Process addon instance
 	ret, procErr := r.processAddon(ctx, log, instance, wfl)
 
@@ -287,6 +279,11 @@ func (r *AddonReconciler) processAddon(ctx context.Context, log logr.Logger, ins
 	instance.Status.Resources = make([]addonmgrv1alpha1.ObjectStatus, 0)
 
 	if changedStatus {
+		// Delete old workflows
+		if err := r.deleteOldWorkflows(ctx, log, instance); err != nil {
+			log.Error(err, "Failed to delete old workflows.")
+			return reconcile.Result{}, err
+		}
 		// Set ttl starttime if checksum has changed
 		instance.Status.StartTime = common.GetCurrentTimestamp()
 
