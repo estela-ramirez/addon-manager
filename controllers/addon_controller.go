@@ -279,11 +279,12 @@ func (r *AddonReconciler) processAddon(ctx context.Context, log logr.Logger, ins
 	instance.Status.Resources = make([]addonmgrv1alpha1.ObjectStatus, 0)
 
 	if changedStatus {
+		log.Info("Using personal image")
 		// Delete old workflows
-		if err := r.deleteOldWorkflows(ctx, log, instance); err != nil {
-			log.Error(err, "Failed to delete old workflows.")
-			return reconcile.Result{}, err
-		}
+		// if err := r.deleteOldWorkflows(ctx, log, instance); err != nil {
+		// 	log.Error(err, "Failed to delete old workflows.")
+		// 	return reconcile.Result{}, err
+		// }
 		// Set ttl starttime if checksum has changed
 		instance.Status.StartTime = common.GetCurrentTimestamp()
 
