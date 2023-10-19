@@ -125,7 +125,11 @@ func (r *AddonReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 		return reconcile.Result{}, ignoreNotFound(err)
 	}
-
+	// print  spec
+	log.Info("Addon spec == ", instance.Spec)
+	// print checksum
+	log.Info("Addon checksum == ", instance.Status.Checksum)
+	// if spec is different, then disable cache
 	return r.execAddon(ctx, log, instance)
 }
 
