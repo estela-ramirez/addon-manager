@@ -114,9 +114,9 @@ types: api/addon/v1alpha1/zz_generated.deepcopy.go
 
 # Build the docker image
 docker-build: manager
-	docker build --build-arg COMMIT=${GIT_COMMIT} --build-arg DATE=${BUILD_DATE} -t ${IMG} .
+	docker build --platform linux/amd64 --build-arg COMMIT=${GIT_COMMIT} --build-arg DATE=${BUILD_DATE} -t ${IMG} .
 	@echo "updating kustomize image patch file for manager resource"
-	sed -i'' -e 's@image: .*@image: '"${IMG}"'@' ./config/default/manager_image_patch.yaml
+#sed -i'' -e 's@image: .*@image: '"${IMG}"'@' ./config/default/manager_image_patch.yaml
 
 # Push the docker image
 docker-push:
