@@ -30,7 +30,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
@@ -126,9 +125,9 @@ func (r *AddonReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return reconcile.Result{}, ignoreNotFound(err)
 	}
 	// print  spec
-	log.Info("Addon spec == ", instance.Spec)
+	log.Info("Addon spec == %v", instance.Spec)
 	// print checksum
-	log.Info("Addon checksum == ", instance.Status.Checksum)
+	log.Info("Addon checksum == %v", instance.Status.Checksum)
 	// if spec is different, then disable cache
 	return r.execAddon(ctx, log, instance)
 }
@@ -262,12 +261,12 @@ func (r *AddonReconciler) enqueueRequestWithAddonLabel() handler.EventHandler {
 		var labels = a.GetLabels()
 		if name, ok := labels[addonapiv1.ResourceDefaultOwnLabel]; ok && strings.TrimSpace(name) != "" {
 			// Lookup addon related to this object.
-			if ok, v := r.versionCache.HasVersionName(name); ok {
-				reqs = append(reqs, reconcile.Request{NamespacedName: types.NamespacedName{
-					Name:      v.Name,
-					Namespace: v.Namespace,
-				}})
-			}
+			// if ok, v := r.versionCache.HasVersionName(name); ok {
+			// 	reqs = append(reqs, reconcile.Request{NamespacedName: types.NamespacedName{
+			// 		Name:      v.Name,
+			// 		Namespace: v.Namespace,
+			// 	}})
+			// }
 		}
 		return reqs
 	})
@@ -603,7 +602,7 @@ func (r *AddonReconciler) Finalize(ctx context.Context, addon *addonmgrv1alpha1.
 	}
 
 	// Remove version from cache
-	r.versionCache.RemoveVersion(addon.Spec.PkgName, addon.Spec.PkgVersion)
+	// r.versionCache.RemoveVersion(addon.Spec.PkgName, addon.Spec.PkgVersion)
 
 	// Remove finalizer from the list and update it.
 	if removeFinalizer {
