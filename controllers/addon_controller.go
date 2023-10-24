@@ -16,6 +16,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -125,9 +126,14 @@ func (r *AddonReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return reconcile.Result{}, ignoreNotFound(err)
 	}
 	// print  spec
-	log.Info("Addon spec == %v", instance.Spec)
+	log.Info("my printing..\n\n")
+	log.Info("Addon spec == %+v", instance.Spec)
+	specStr, _ := json.Marshal(instance.Spec)
+	log.Info("Addon spec == %s", string(specStr))
 	// print checksum
-	log.Info("Addon checksum == %v", instance.Status.Checksum)
+	log.Info("Addon checksum == %+v", instance.Status.Checksum)
+	checksumStr := fmt.Sprintf("%v", instance.Status.Checksum)
+	log.Info("Addon checksum == %s\n\n", checksumStr)
 	// if spec is different, then disable cache
 	return r.execAddon(ctx, log, instance)
 }
@@ -136,7 +142,7 @@ func (r *AddonReconciler) deleteOldWorkflows(ctx context.Context, log logr.Logge
 	// Define the selector to get the workflows related to the addon
 	labelSelector := metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"addon": addon.Name,
+			"app": addon.Name,
 		},
 	}
 
@@ -144,7 +150,7 @@ func (r *AddonReconciler) deleteOldWorkflows(ctx context.Context, log logr.Logge
 	if err != nil {
 		return err
 	}
-	log.Info("Deleting old workflows with selector", selectorString)
+	log.Info("Deleting old workflows with selector %+v", selectorString)
 
 	// List the workflows
 	workflows, err := r.wfcli.ArgoprojV1alpha1().Workflows(addon.Namespace).List(ctx, metav1.ListOptions{
@@ -153,14 +159,15 @@ func (r *AddonReconciler) deleteOldWorkflows(ctx context.Context, log logr.Logge
 	if err != nil {
 		return err
 	}
+	log.Info("number of workflows found: %+v", len(workflows.Items))
 	for _, workflow := range workflows.Items {
-		log.Info("Found old workflow: ", workflow.Name)
+		log.Info("Found old workflow: %+v", workflow.Name)
 	}
 
 	// Delete each workflow
 	for _, workflow := range workflows.Items {
 		err := r.wfcli.ArgoprojV1alpha1().Workflows(addon.Namespace).Delete(ctx, workflow.Name, metav1.DeleteOptions{})
-		log.Info("Deleted old workflow: ", workflow.Name)
+		log.Info("Deleted old workflow: %+v", workflow.Name)
 		if err != nil {
 			return err
 		}
@@ -206,6 +213,8 @@ func (r *AddonReconciler) execAddon(ctx context.Context, log logr.Logger, instan
 	err := r.addonUpdater.UpdateStatus(ctx, log, instance)
 	if err != nil {
 		// Force retry when status fails to update
+		// log err
+		log.Error(err, "Failed to update addon status.")
 		return reconcile.Result{RequeueAfter: 1 * time.Second}, err
 	}
 
